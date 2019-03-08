@@ -1,95 +1,193 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Reflection;
 using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 
-namespace CaptureProcessor
+namespace Microsoft.Azure.EventHubs.CaptureProcessor
 {
-    using Avro;
-    using Avro.Generic;
     using Microsoft.Azure.EventHubs;
     using Microsoft.Azure.EventHubs.Processor;
-
-    public class CaptureProcessorHost
+    using Avro;
+    using Avro.Generic;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage;
+    public class CaptureProcessor
     {
-        public CaptureProcessorHost(string capturePath, string pattern)
-        {
-            filePath = capturePath;
-            searchPattern = pattern;
-        }
-
-        string filePath;
-        string searchPattern;
-
         IEventProcessor processor;
+        public IEventProcessor Processor { get { return processor; } }
 
-        public Task RegisterCaptureProcessorAsync<T>() where T : IEventProcessor
+        PartitionContext context;
+        public PartitionContext Context { get { return context; } }
+
+        EventHubsDetails eventHubsDetails;
+        bool useStartFile = false;
+        string startString;
+        public CaptureProcessor(IEventProcessor processor, PartitionContext context, EventHubsDetails eventHubsDetails)
         {
-            //add this some day
-            //EventProcessorOptions opts = new EventProcessorOptions();
-
-            processor = Activator.CreateInstance(typeof(T)) as IEventProcessor;
-            //you don't need real credentials, but the format must be real. 
-            EventProcessorHost host = new EventProcessorHost("path", "group", "Endpoint=sb://servicebus.windows.net/;SharedAccessKeyName=NoKey;SharedAccessKey=nokey=", "DefaultEndpointsProtocol=https;AccountName=fakeaccount;AccountKey=NotARealKey==;EndpointSuffix=core.windows.net", "lease");
+            this.context = context;
+            this.processor = processor;
+            this.eventHubsDetails = eventHubsDetails;
+            if(eventHubsDetails.StartingAt != null && eventHubsDetails.StartingAt != DateTime.MinValue)
+            {
+                useStartFile = true;
+                startString = GetStartString(context.PartitionId);
+            }
+        }
+        /*
+         *             //if (!string.IsNullOrEmpty(eventHubsDetails.StartingAtFile))
+         *             
+        public CaptureProcessor(EventProcessorHost host, string eventHubName, string consumerGroup, int partitionId)
+        {
             CancellationTokenSource source = new CancellationTokenSource();
             CancellationToken token = source.Token;
-
             var ctor = typeof(PartitionContext).GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)[0];
-            var context = (PartitionContext)ctor.Invoke(new object[] { host, "0", "path", "group", token });
+            context = (PartitionContext)ctor.Invoke(new object[] { host, partitionId.ToString(), eventHubName, consumerGroup, token });
+        }
+        public Task RegisterCaptureProcessor<T>() where T : IEventProcessor
+        {
+            processor = Activator.CreateInstance(typeof(T)) as IEventProcessor;
+            return Task.CompletedTask;
+        }
+        */
+        string CleanString(string part)
+        {
+            return part.Replace("{", "").Replace("}", "");
+        }
 
-            //enumerate files with prefix
+        //Default name pattern
+        //{Namespace}/{EventHub}/{PartitionId}/{Year}/{Month}/{Day}/{Hour}/{Minute}/{Second}
+        string FormatStorageString(string partitionId)
+        {
+            string result = "";
+            result = eventHubsDetails.CaptureFileNameFormat.Replace("{Namespace}", eventHubsDetails.NamespaceName);
+            result = result.Replace("{EventHub}", eventHubsDetails.EventHubName);
+            result = result.Replace("{PartitionId}", partitionId);
+            result = result.Replace("{Year}/{Month}/{Day}/{Hour}/{Minute}/{Second}", "");
+            
+            return result;
+        }
+
+        string GetStartString(string partitionId)
+        {
+            string result = "";
+            result = eventHubsDetails.CaptureFileNameFormat.Replace("{Namespace}", eventHubsDetails.NamespaceName);
+            result = result.Replace("{EventHub}", eventHubsDetails.EventHubName);
+            result = result.Replace("{PartitionId}", partitionId);
+            result = result.Replace("{Year}", eventHubsDetails.StartingAt.Value.Year.ToString());
+            result = result.Replace("{Month}", eventHubsDetails.StartingAt.Value.Month.ToString("D2"));
+            result = result.Replace("{Day}", eventHubsDetails.StartingAt.Value.Day.ToString("D2"));
+            result = result.Replace("{Hour}", eventHubsDetails.StartingAt.Value.Hour.ToString("D2"));
+            result = result.Replace("{Minute}", eventHubsDetails.StartingAt.Value.Minute.ToString("D2"));
+            result = result.Replace("{Second}", eventHubsDetails.StartingAt.Value.Second.ToString("D2"));
+            return result;
+        }
+        public async Task StartPump()
+        {
+            //start the pump on storage account or 
+            CloudStorageAccount storageAccount;
+            if (CloudStorageAccount.TryParse(eventHubsDetails.StorageAccountConnectionString, out storageAccount))
+            {
+                var cloudBlobClient = storageAccount.CreateCloudBlobClient();
+                var cloudBlobContainer = cloudBlobClient.GetContainerReference(eventHubsDetails.CaptureContainer);
+                string containerUri = cloudBlobContainer.Uri.ToString() + "/";
+                BlobContinuationToken blobContinuationToken = null;
+                do
+                {
+                    BlobRequestOptions bro = new BlobRequestOptions();
+                    string format = FormatStorageString(context.PartitionId);
+                    var results = cloudBlobContainer.ListBlobsSegmentedAsync(format,
+                        true, BlobListingDetails.None, null, blobContinuationToken, bro, null).Result;
+                    // Get the value of the continuation token returned by the listing call.
+                    blobContinuationToken = results.ContinuationToken;
+                    foreach (IListBlobItem item in results.Results)
+                    {
+                        if(useStartFile)
+                        {
+                            if (string.Compare(containerUri + startString, item.Uri.ToString()) > 0)
+                            {
+                                //do something?
+                                continue;
+                            }
+                        }
+
+                        Console.WriteLine(item.Uri);
+                        ICloudBlob blob = await cloudBlobClient.GetBlobReferenceFromServerAsync(item.Uri);
+                        using (Stream stream = blob.OpenReadAsync(null, bro, null).Result)
+                        {
+                            await processor.ProcessEventsAsync(context, ReadFile(stream));
+                        }
+
+                    }
+                } while (blobContinuationToken != null); // Loop while the continuation token is not null.
+            }
+
+            /*
+            //file local store
             foreach (var file in Directory.EnumerateFiles(filePath, searchPattern))
             {
                 //load each file
-                processor.ProcessEventsAsync(context, ReadFile(file));
-            }
-
-            return Task.CompletedTask;
-        }
-
-        IEnumerable<EventData> ReadFile(string path)
-        {
-            using (var stream = File.OpenRead(path))
-            {
-                var t = typeof(EventData);
-                var sysPropType = typeof(Microsoft.Azure.EventHubs.EventData.SystemPropertiesCollection);
-
-                var reader = Avro.File.DataFileReader<GenericRecord>.OpenReader(stream);
-                Dictionary<string, List<object>> dictionary = new Dictionary<string, List<object>>();
-                while (reader.HasNext())
+                using (var inStream = File.OpenRead(file))
                 {
-                    EventData result = null;
-                    Object body;
-                    var data = reader.Next();
-                    if (data.TryGetValue("Body", out body))
-                    {
-                        result = new EventData(body as byte[]);
-                        t.GetProperty("SystemProperties").SetValue(result, Activator.CreateInstance(sysPropType, true));
-                    }
-                    IEnumerator<Field> enu = data.Schema.GetEnumerator();
-                    while (enu.MoveNext())
-                    {
-                        //every EventData will have a "Body" there are also properties
-                        if (enu.Current.Name == "Body")
-                            continue;
-                        Object prop;
-                        if (data.TryGetValue(enu.Current.Name, out prop))
-                        {
-                            //There are only three system properties in a Capture file
-                            if (enu.Current.Name == "SequenceNumber" || enu.Current.Name == "Offset" || enu.Current.Name == "EnqueuedTimeUtc")
-                                result.SystemProperties[enu.Current.Name] = prop;
-                            else
-                                result.Properties[enu.Current.Name] = prop;
-                        }
-                    }
-                    yield return result;
+                    processor.ProcessEventsAsync(context, ReadFile(inStream));
                 }
             }
+            */
+            //return Task.CompletedTask;
+        }
 
+        IEnumerable<EventData> ReadFile(Stream stream)
+        {
+            var t = typeof(EventData);
+            var sysPropType = typeof(Microsoft.Azure.EventHubs.EventData.SystemPropertiesCollection);
+
+            var reader = Avro.File.DataFileReader<GenericRecord>.OpenReader(stream);
+            Dictionary<string, List<object>> dictionary = new Dictionary<string, List<object>>();
+            while (reader.HasNext())
+            {
+                EventData result = null;
+                Object body;
+                var data = reader.Next();
+                if (data.TryGetValue("Body", out body))
+                {
+                    result = new EventData(body as byte[]);
+                    t.GetProperty("SystemProperties").SetValue(result, Activator.CreateInstance(sysPropType, true));
+                }
+                Object userProperties;
+                if (data.TryGetValue("Properties", out userProperties))
+                {
+                    Dictionary<String, Object> properties = userProperties as Dictionary<String, Object>;
+                    foreach (var property in properties)
+                    {
+                        result.Properties.Add(property.Key, property.Value);
+                    }
+                }
+                Object sysProperties;
+                if (data.TryGetValue("SystemProperties", out sysProperties))
+                {
+                    Dictionary<String, Object> properties = sysProperties as Dictionary<String, Object>;
+                    foreach (var property in properties)
+                    {
+                        result.SystemProperties[property.Key] = property.Value;
+                    }
+                }
+                IEnumerator<Avro.Field> enu = data.Schema.GetEnumerator();
+                while (enu.MoveNext())
+                {
+                    if (enu.Current.Name == "Body" || enu.Current.Name == "SystemProperties" || enu.Current.Name == "Properties")
+                        continue;
+                    //all we should have left are System Properties
+                    Object prop;
+                    if (data.TryGetValue(enu.Current.Name, out prop))
+                    {
+                        result.SystemProperties[enu.Current.Name] = prop;
+                    }
+                }
+                yield return result;
+            }
         }
     }
 

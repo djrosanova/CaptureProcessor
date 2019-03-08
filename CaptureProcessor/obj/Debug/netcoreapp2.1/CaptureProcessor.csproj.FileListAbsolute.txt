@@ -1,0 +1,9 @@
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\bin\Debug\netcoreapp2.1\Microsoft.Azure.EventHubs.CaptureProcessor.deps.json
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\bin\Debug\netcoreapp2.1\Microsoft.Azure.EventHubs.CaptureProcessor.dll
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\obj\Debug\netcoreapp2.1\CaptureProcessor.csprojAssemblyReference.cache
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\obj\Debug\netcoreapp2.1\CaptureProcessor.csproj.CoreCompileInputs.cache
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\obj\Debug\netcoreapp2.1\CaptureProcessor.AssemblyInfoInputs.cache
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\obj\Debug\netcoreapp2.1\CaptureProcessor.AssemblyInfo.cs
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\bin\Debug\netcoreapp2.1\Microsoft.Azure.EventHubs.CaptureProcessor.pdb
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\obj\Debug\netcoreapp2.1\Microsoft.Azure.EventHubs.CaptureProcessor.dll
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\CaptureProcessor\obj\Debug\netcoreapp2.1\Microsoft.Azure.EventHubs.CaptureProcessor.pdb

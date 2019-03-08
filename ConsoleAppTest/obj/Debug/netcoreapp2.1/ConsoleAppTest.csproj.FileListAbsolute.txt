@@ -1,0 +1,14 @@
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\bin\Debug\netcoreapp2.1\ConsoleAppTest.deps.json
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\bin\Debug\netcoreapp2.1\ConsoleAppTest.runtimeconfig.json
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\bin\Debug\netcoreapp2.1\ConsoleAppTest.runtimeconfig.dev.json
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\bin\Debug\netcoreapp2.1\ConsoleAppTest.dll
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\bin\Debug\netcoreapp2.1\ConsoleAppTest.pdb
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\bin\Debug\netcoreapp2.1\Microsoft.Azure.EventHubs.CaptureProcessor.dll
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\bin\Debug\netcoreapp2.1\Microsoft.Azure.EventHubs.CaptureProcessor.pdb
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\obj\Debug\netcoreapp2.1\ConsoleAppTest.csproj.CoreCompileInputs.cache
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\obj\Debug\netcoreapp2.1\ConsoleAppTest.AssemblyInfoInputs.cache
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\obj\Debug\netcoreapp2.1\ConsoleAppTest.AssemblyInfo.cs
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\obj\Debug\netcoreapp2.1\ConsoleAppTest.csproj.CopyComplete
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\obj\Debug\netcoreapp2.1\ConsoleAppTest.dll
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\obj\Debug\netcoreapp2.1\ConsoleAppTest.pdb
+C:\Users\darosa\Documents\Visual Studio 2017\Projects\Capture\CaptureProcessor\ConsoleAppTest\obj\Debug\netcoreapp2.1\ConsoleAppTest.csprojAssemblyReference.cache
